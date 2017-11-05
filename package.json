@@ -1,0 +1,10 @@
+{
+  "name": "blockchain",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {},
+  "keywords": [],
+  "author": "Luca Tabone <taboneluca3@gmail.com>",
+  "license": "ISC"
+}
