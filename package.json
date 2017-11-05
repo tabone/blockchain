@@ -3,8 +3,13 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "scripts": {},
+  "scripts": {
+    "test": "standard"
+  },
   "keywords": [],
   "author": "Luca Tabone <taboneluca3@gmail.com>",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "standard": "^10.0.3"
+  }
 }
