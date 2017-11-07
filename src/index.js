@@ -2,6 +2,7 @@
 
 const EventEmitter = require('events')
 const block = require('./block')
+const queuedData = require('./queued-data')
 
 /**
  * Default proof of work difficulty.
@@ -27,7 +28,7 @@ module.exports = function createBlockchain (opts = {}) {
     /**
      * Function used to add a new block.
      */
-    enqueueBlock,
+    enqueueData,
 
     /**
      * Function used to validate the whole Blockchain.
@@ -47,7 +48,7 @@ module.exports = function createBlockchain (opts = {}) {
 
       /**
        * Stores data to be added in the Blockchain.
-       * @type {Array.<*>}
+       * @type {Array.<module:queue-data>}
        */
       queue: []
     }
@@ -105,9 +106,10 @@ function getLatestBlock () {
  * @param {*}    opts.data Block data.
  * @this {module:blockchain}
  */
-function enqueueBlock ({ data }) {
-  this._.queue.push(data)
-  this.emit('enqueue-block', data)
+function enqueueData (opts) {
+  const queuedDataInst = queuedData(opts)
+  this._.queue.push(queuedDataInst)
+  this.emit('enqueue-data', queuedDataInst)
   if (this._.queue.length === 1) constructNextBlock.call(this)
 }
 
@@ -119,9 +121,12 @@ function constructNextBlock () {
   // Stop process if there is no data in the queue.
   if (this._.queue.length === 0) return this.emit('waiting')
 
+  // Retrieve the Queue Data object to be inserted in a Block.
+  const queuedDataInst = this._.queue[0]
+
   // Create block.
   const blockInst = block({
-    data: this._.queue[0],
+    data: queuedDataInst.data,
     index: this.nextIndex,
     difficulty: this.difficulty,
     previousHash: (this.nextIndex === 0) ? '' : this.latestBlock.hash
@@ -129,7 +134,7 @@ function constructNextBlock () {
 
   // Notify Event Emitter listener that the Blockchain will be constructing a
   // new block.
-  this.emit('constructing-block', blockInst)
+  this.emit('constructing-block', queuedDataInst)
 
   // Listen for the Block's ready' event (which will mean that the block has
   // been constructed).
@@ -140,7 +145,7 @@ function constructNextBlock () {
     this._.chain.push(blockInst)
     // Notify Event Emitter listeners that a new Block has been added in the
     // Blockchain.
-    this.emit('new-block', blockInst)
+    this.emit('new-block', blockInst, queuedDataInst.id)
     // Start working on constructing the next Block.
     constructNextBlock.call(this)
   })
