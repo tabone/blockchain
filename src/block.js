@@ -36,6 +36,11 @@ module.exports = function createBlock (opts) {
     validate,
 
     /**
+     * Function used to customize the string representation of an object.
+     */
+    toJSON,
+
+    /**
      * Contains properties that should only be used by the Block object.
      * @type {Object}
      */
@@ -82,7 +87,7 @@ module.exports = function createBlock (opts) {
        * Block's creation time.
        * @type {number}
        */
-      date: opts.date || Date.now(),
+      date: opts.date || Date.now()
     }
   })
 
@@ -201,4 +206,20 @@ function generateHash () {
       return
     }
   })
+}
+
+/**
+ * Function used to customize the string representation of an object.
+ * @return {Object} Object that should be stringified.
+ */
+function toJSON () {
+  return {
+    data: this.data,
+    date: this.date,
+    hash: this.hash,
+    index: this.index,
+    nonce: this.nonce,
+    difficulty: this.difficulty,
+    previousHash: this.previousHash
+  }
 }

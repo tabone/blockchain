@@ -30,6 +30,11 @@ module.exports = function createBlockchain (opts = {}) {
     validate,
 
     /**
+     * Function used to customize the string representation of an object.
+     */
+    toJSON,
+
+    /**
      * Contains properties that should only be used by the Blockchain object.
      * @type {Object}
      */
@@ -184,4 +189,16 @@ function validate () {
   return this._.chain.find((blockInst) => {
     return blockInst.validate() === false
   }) === undefined
+}
+
+/**
+ * Function used to customize the string representation of an object.
+ * @return {Object} Object that should be stringified.
+ */
+function toJSON () {
+  return {
+    chain: this._.chain,
+    queue: this._.queue,
+    difficulty: this._.difficulty
+  }
 }
