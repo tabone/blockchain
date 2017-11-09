@@ -25,11 +25,6 @@ module.exports = function createBlockchain (opts = {}) {
     enqueueData,
 
     /**
-     * Function used to validate the whole Blockchain.
-     */
-    validate,
-
-    /**
      * Function used to customize the string representation of an object.
      */
     toJSON,
@@ -61,6 +56,7 @@ module.exports = function createBlockchain (opts = {}) {
 
   // Setup getters & setters.
   Object.defineProperty(blockchain, 'chain', { get: getChain })
+  Object.defineProperty(blockchain, 'valid', { get: getValid })
   Object.defineProperty(blockchain, 'nextIndex', { get: getNextIndex })
   Object.defineProperty(blockchain, 'latestBlock', { get: getLatestBlock })
   Object.defineProperty(blockchain, 'genesisBlock', { get: getGenesisBlock })
@@ -82,6 +78,18 @@ function getChain () {
 }
 
 /**
+ * Function used to validate the Blockchain.
+ * @this {module:blockchain}
+ * @return {boolean} TRUE if valid.
+ * @return {boolean} FALSE if not valid.
+ */
+function getValid () {
+  return this._.chain.find((blockInst) => {
+    return blockInst.valid === false
+  }) === undefined
+}
+
+/**
  * Function used to return the next available block index.
  * @this {module:blockchain}
  * @return {number} Next available index.
@@ -100,7 +108,17 @@ function getGenesisBlock () {
 }
 
 /**
+ * Function used to return the latest added block.
+ * @this {module:blockchain}
+ * @return {module:block} Lastest added block.
+ */
+function getLatestBlock () {
+  return this._.chain[this._.chain.length - 1]
+}
+
+/**
  * Function used to return the proof of work difficulty.
+ * @this {module:blockchain}
  * @return {number} Proof of work difficulty.
  */
 function getDifficulty () {
@@ -109,6 +127,7 @@ function getDifficulty () {
 
 /**
  * Function used to set the Blockchain proof of work difficulty.
+ * @this {module:blockchain}
  * @param {number} difficulty Proof of work difficulty.
  */
 function setDifficulty (difficulty) {
@@ -120,19 +139,10 @@ function setDifficulty (difficulty) {
 }
 
 /**
- * Function used to return the latest added block.
- * @this {module:blockchain}
- * @return {module:block} Lastest added block.
- */
-function getLatestBlock () {
-  return this._.chain[this._.chain.length - 1]
-}
-
-/**
  * Function used to queue data to be added in the blockchain.
+ * @this {module:blockchain}
  * @param {opts} opts      Options for addBlock function.
  * @param {*}    opts.data Block data.
- * @this {module:blockchain}
  */
 function enqueueData (opts) {
   const queuedDataInst = queuedData(opts)
@@ -180,23 +190,13 @@ function constructNextBlock () {
 }
 
 /**
- * Function used to validate the while blockchain.
- * @this {module:blockchain}
- * @return {boolean} TRUE if valid.
- * @return {boolean} FALSE if not valid.
- */
-function validate () {
-  return this._.chain.find((blockInst) => {
-    return blockInst.validate() === false
-  }) === undefined
-}
-
-/**
  * Function used to customize the string representation of an object.
+ * @this {module:blockchain}
  * @return {Object} Object that should be stringified.
  */
 function toJSON () {
   return {
+    valid: this.valid,
     chain: this._.chain,
     queue: this._.queue,
     difficulty: this._.difficulty

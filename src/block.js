@@ -31,11 +31,6 @@ module.exports = function createBlock (opts) {
   // Create Block Event Emitter object.
   const block = Object.assign(Object.create(new EventEmitter()), {
     /**
-     * Function used to validate the Block.
-     */
-    validate,
-
-    /**
      * Function used to customize the string representation of an object.
      */
     toJSON,
@@ -97,6 +92,7 @@ module.exports = function createBlock (opts) {
   Object.defineProperty(block, 'date', { get: getDate })
   Object.defineProperty(block, 'index', { get: getIndex })
   Object.defineProperty(block, 'nonce', { get: getNonce })
+  Object.defineProperty(block, 'valid', { get: getValid })
   Object.defineProperty(block, 'difficulty', { get: getDifficulty })
   Object.defineProperty(block, 'previousHash', { get: getPreviousHash })
 
@@ -109,6 +105,7 @@ module.exports = function createBlock (opts) {
 
 /**
  * Function used to return the data stored in the Block.
+ * @this {module:block}
  * @return {*} Block's data.
  */
 function getData () {
@@ -117,6 +114,7 @@ function getData () {
 
 /**
  * Function used to return the Block's hash.
+ * @this {module:block}
  * @return {string} Block's hash.
  */
 function getHash () {
@@ -125,6 +123,7 @@ function getHash () {
 
 /**
  * Function used to return the Block's creation time.
+ * @this {module:block}
  * @return {number} Block's creation time.
  */
 function getDate () {
@@ -133,6 +132,7 @@ function getDate () {
 
 /**
  * Function used to return the position of the Block in the Blockchain.
+ * @this {module:block}
  * @return {number} Position of the Block in the Blockchain.
  */
 function getIndex () {
@@ -141,26 +141,11 @@ function getIndex () {
 
 /**
  * Function used to return the nonce of the Block
+ * @this {module:block}
  * @return {number} Nonce of the Block.
  */
 function getNonce () {
   return this._.nonce
-}
-
-/**
- * Function used to return the proof of work difficulty.
- * @return {number} Proof of work difficulty.
- */
-function getDifficulty () {
-  return this._.difficulty
-}
-
-/**
- * Function used to return the hash of the previous Block.
- * @return {string} Hash of the Previous Block.
- */
-function getPreviousHash () {
-  return this._.previousHash
 }
 
 /**
@@ -169,7 +154,7 @@ function getPreviousHash () {
  * @return {boolean} TRUE if valid.
  * @return {boolean} FALSE if not valid.
  */
-function validate () {
+function getValid () {
   // Signiture of Hash without the nonce.
   const signiture = String(this._.index) + String(this._.difficulty) +
     String(this._.previousHash) + String(this._.data) + String(this._.date) +
@@ -179,6 +164,24 @@ function validate () {
   sha256.update(signiture)
   var hash = sha256.digest('hex')
   return hash === this._.hash && parseInt(hash, 16) <= this._.difficulty
+}
+
+/**
+ * Function used to return the proof of work difficulty.
+ * @this {module:block}
+ * @return {number} Proof of work difficulty.
+ */
+function getDifficulty () {
+  return this._.difficulty
+}
+
+/**
+ * Function used to return the hash of the previous Block.
+ * @this {module:block}
+ * @return {string} Hash of the Previous Block.
+ */
+function getPreviousHash () {
+  return this._.previousHash
 }
 
 /**
@@ -210,16 +213,18 @@ function generateHash () {
 
 /**
  * Function used to customize the string representation of an object.
+ * @this {module:block}
  * @return {Object} Object that should be stringified.
  */
 function toJSON () {
   return {
-    data: this.data,
-    date: this.date,
-    hash: this.hash,
-    index: this.index,
-    nonce: this.nonce,
-    difficulty: this.difficulty,
-    previousHash: this.previousHash
+    valid: this.valid,
+    data: this._.data,
+    date: this._.date,
+    hash: this._.hash,
+    index: this._.index,
+    nonce: this._.nonce,
+    difficulty: this._.difficulty,
+    previousHash: this._.previousHash
   }
 }
