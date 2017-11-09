@@ -20,12 +20,6 @@ module.exports = function createBlockchain (opts = {}) {
   // Create Blockchain Event Emitter object.
   const blockchain = Object.assign(new EventEmitter(), {
     /**
-     * Proof of work difficulty.
-     * @type {number}
-     */
-    difficulty: opts.difficulty || DIFFICULTY,
-
-    /**
      * Function used to add a new block.
      */
     enqueueData,
@@ -36,7 +30,7 @@ module.exports = function createBlockchain (opts = {}) {
     validate,
 
     /**
-     * Contains properties that should only be used by the blockchain object.
+     * Contains properties that should only be used by the Blockchain object.
      * @type {Object}
      */
     _: {
@@ -50,15 +44,24 @@ module.exports = function createBlockchain (opts = {}) {
        * Stores data to be added in the Blockchain.
        * @type {Array.<module:queue-data>}
        */
-      queue: []
+      queue: [],
+
+      /**
+       * Proof of work difficulty.
+       * @type {number}
+       */
+      difficulty: opts.difficulty || DIFFICULTY,
     }
   })
 
-  // Setup getters.
+  // Setup getters & setters.
   Object.defineProperty(blockchain, 'chain', { get: getChain })
   Object.defineProperty(blockchain, 'nextIndex', { get: getNextIndex })
   Object.defineProperty(blockchain, 'latestBlock', { get: getLatestBlock })
   Object.defineProperty(blockchain, 'genesisBlock', { get: getGenesisBlock })
+  Object.defineProperty(blockchain, 'difficulty', {
+    get: getDifficulty, set: setDifficulty
+  })
 
   // Return a new Blockchain instance.
   return blockchain
@@ -89,6 +92,26 @@ function getNextIndex () {
  */
 function getGenesisBlock () {
   return this._.chain[0]
+}
+
+/**
+ * Function used to return the proof of work difficulty.
+ * @return {number} Proof of work difficulty.
+ */
+function getDifficulty () {
+  return this._.difficulty
+}
+
+/**
+ * Function used to set the Blockchain proof of work difficulty.
+ * @param {number} difficulty Proof of work difficulty.
+ */
+function setDifficulty (difficulty) {
+  if (typeof difficulty !== 'number') {
+    throw new Error('proof of work difficulty should be a number')
+  }
+
+  this._.difficulty = difficulty
 }
 
 /**
@@ -128,7 +151,7 @@ function constructNextBlock () {
   const blockInst = block({
     data: queuedDataInst.data,
     index: this.nextIndex,
-    difficulty: this.difficulty,
+    difficulty: this._.difficulty,
     previousHash: (this.nextIndex === 0) ? '' : this.latestBlock.hash
   })
 
