@@ -12,8 +12,8 @@ const DIFFICULTY = 1766847064778384329583297500742918515827483896875618958121606
 
 /**
  * Function used to create a new Blockchain.
- * @param  {Object} opts            Options for createBlockchain function.
- * @param  {number} opts.difficulty Proof of work difficulty.
+ * @param  {Object} opts              Options for createBlockchain function.
+ * @param  {number} [opts.difficulty] Proof of work difficulty.
  * @return {module:blockchain} Blockchain object.
  */
 module.exports = function createBlockchain (opts = {}) {
