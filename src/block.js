@@ -3,6 +3,7 @@
 const assert = require('assert')
 const crypto = require('crypto')
 const EventEmitter = require('events')
+const states = require('./block-states')
 
 /**
  * Function used to create a new Block.
@@ -30,6 +31,11 @@ module.exports = function createBlock (opts) {
 
   // Create Block Event Emitter object.
   const block = Object.assign(Object.create(new EventEmitter()), {
+    /**
+     * Function used to abort the Block initialization.
+     */
+    abort,
+
     /**
      * Function used to customize the string representation of an object.
      */
@@ -82,7 +88,13 @@ module.exports = function createBlock (opts) {
        * Block's creation time.
        * @type {number}
        */
-      date: opts.date || Date.now()
+      date: opts.date || Date.now(),
+
+      /**
+       * Indicates the current state of the Block.
+       * @type {number}
+       */
+      state: states.INITIALIZING
     }
   })
 
@@ -93,6 +105,7 @@ module.exports = function createBlock (opts) {
   Object.defineProperty(block, 'index', { get: getIndex })
   Object.defineProperty(block, 'nonce', { get: getNonce })
   Object.defineProperty(block, 'valid', { get: getValid })
+  Object.defineProperty(block, 'state', { get: getState })
   Object.defineProperty(block, 'difficulty', { get: getDifficulty })
   Object.defineProperty(block, 'previousHash', { get: getPreviousHash })
 
@@ -140,7 +153,7 @@ function getIndex () {
 }
 
 /**
- * Function used to return the nonce of the Block
+ * Function used to return the nonce of the Block.
  * @this {module:block}
  * @return {number} Nonce of the Block.
  */
@@ -149,7 +162,7 @@ function getNonce () {
 }
 
 /**
- * Function used to validate the Block
+ * Function used to validate the Block.
  * @this {module:block}
  * @return {boolean} TRUE if valid.
  * @return {boolean} FALSE if not valid.
@@ -164,6 +177,15 @@ function getValid () {
   sha256.update(signiture)
   var hash = sha256.digest('hex')
   return hash === this._.hash && parseInt(hash, 16) <= this._.difficulty
+}
+
+/**
+ * Function used to return the state of the Block.
+ * @this {module:block}
+ * @return {number} State of the Block.
+ */
+function getState () {
+  return this._.state
 }
 
 /**
@@ -185,6 +207,37 @@ function getPreviousHash () {
 }
 
 /**
+ * Function used to abort the Block initialization.
+ * @this {module:block}
+ */
+function abort () {
+  // Abort initialization, if Block is still the initialization state.
+  if (this._.state === states.INITIALIZING) {
+    changeState.call(this, states.ABORTED)
+    return
+  }
+  // Emit error, if Block initialization is aborted after it has been
+  // initialized.
+  this.emit('error', new Error('block already initialized'))
+}
+
+/**
+ * Function used to change the state of the Block.
+ * @this {module:block}
+ * @param  {number} state New state of the Block.
+ */
+function changeState (state) {
+  // Change the current state.
+  this._.state = state
+
+  // Notify listeners.
+  switch (state) {
+    case states.READY: this.emit('ready'); break
+    case states.ABORTED: this.emit('aborted'); break
+  }
+}
+
+/**
  * Function used generate the Block hash.
  * @async
  * @this {module:block}
@@ -200,13 +253,14 @@ function generateHash () {
     // Search for a Block hash that is smaller than the difficulty of the
     // proof of work.
     while (true) {
+      // Stop hash generation if Block is not in the initialization state.
+      if (this._.state !== states.INITIALIZING) break
       var sha256 = crypto.createHash('sha256')
       sha256.update(signiture + String(++this._.nonce))
       var hash = sha256.digest('hex')
       if (parseInt(hash, 16) > this._.difficulty) continue
       this._.hash = hash
-      this.emit('ready', hash)
-      return
+      changeState.call(this, states.READY)
     }
   })
 }
@@ -224,6 +278,7 @@ function toJSON () {
     hash: this._.hash,
     index: this._.index,
     nonce: this._.nonce,
+    state: this._.state,
     difficulty: this._.difficulty,
     previousHash: this._.previousHash
   }
