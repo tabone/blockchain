@@ -208,6 +208,7 @@ function getPreviousHash () {
 
 /**
  * Function used to abort the Block initialization.
+ * @this {module:block}
  */
 function abort () {
   // Abort initialization, if Block is still the initialization state.
@@ -222,6 +223,7 @@ function abort () {
 
 /**
  * Function used to change the state of the Block.
+ * @this {module:block}
  * @param  {number} state New state of the Block.
  */
 function changeState (state) {
