@@ -47,6 +47,12 @@ module.exports = function createBlockchain (opts = {}) {
       queue: [],
 
       /**
+       * Block which is being added to the chain.
+       * @type {module:block}
+       */
+      block: null,
+
+      /**
        * Proof of work difficulty.
        * @type {number}
        */
@@ -163,7 +169,7 @@ function constructNextBlock () {
   const queuedDataInst = this._.queue[0]
 
   // Create block.
-  const blockInst = block({
+  this._.block = block({
     data: queuedDataInst.data,
     index: this.nextIndex,
     difficulty: this._.difficulty,
@@ -176,14 +182,14 @@ function constructNextBlock () {
 
   // Listen for the Block's ready' event (which will mean that the block has
   // been constructed).
-  blockInst.on('ready', () => {
+  this._.block.on('ready', () => {
     // Dequeue data of the Block from the Block queue.
     this._.queue.splice(0, 1)
     // Include newly created block in Blockchain.
-    this._.chain.push(blockInst)
+    this._.chain.push(this._.block)
     // Notify Event Emitter listeners that a new Block has been added in the
     // Blockchain.
-    this.emit('new-block', blockInst, queuedDataInst.id)
+    this.emit('new-block', this._.block, queuedDataInst.id)
     // Start working on constructing the next Block.
     constructNextBlock.call(this)
   })
