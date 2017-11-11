@@ -32,6 +32,11 @@ module.exports = function createBlock (opts) {
   // Create Block Event Emitter object.
   const block = Object.assign(Object.create(new EventEmitter()), {
     /**
+     * Function used to abort the Block initialization.
+     */
+    abort,
+
+    /**
      * Function used to customize the string representation of an object.
      */
     toJSON,
@@ -202,6 +207,20 @@ function getPreviousHash () {
 }
 
 /**
+ * Function used to abort the Block initialization.
+ */
+function abort () {
+  // Abort initialization, if Block is still the initialization state.
+  if (this._.state === states.INITIALIZING) {
+    changeState.call(this, states.ABORTED)
+    return
+  }
+  // Emit error, if Block initialization is aborted after it has been
+  // initialized.
+  this.emit('error', new Error('block already initialized'))
+}
+
+/**
  * Function used to change the state of the Block.
  * @param  {number} state New state of the Block.
  */
@@ -232,13 +251,14 @@ function generateHash () {
     // Search for a Block hash that is smaller than the difficulty of the
     // proof of work.
     while (true) {
+      // Stop hash generation if Block is not in the initialization state.
+      if (this._.state !== states.INITIALIZING) break
       var sha256 = crypto.createHash('sha256')
       sha256.update(signiture + String(++this._.nonce))
       var hash = sha256.digest('hex')
       if (parseInt(hash, 16) > this._.difficulty) continue
       this._.hash = hash
       changeState.call(this, states.READY)
-      return
     }
   })
 }
