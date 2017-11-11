@@ -20,6 +20,12 @@ module.exports = function createBlockchain (opts = {}) {
   // Create Blockchain Event Emitter object.
   const blockchain = Object.assign(new EventEmitter(), {
     /**
+     * Function used to stop the Blockchain from including the current Block
+     * being initialized.
+     */
+    abort,
+
+    /**
      * Function used to add a new block.
      */
     enqueueData,
@@ -142,6 +148,15 @@ function setDifficulty (difficulty) {
   }
 
   this._.difficulty = difficulty
+}
+
+/**
+ * Function used to stop the Blockchain from including the current Block
+ * being initialized.
+ */
+function abort () {
+  // Abort current Block initialization, if there is one ongoing.
+  if (this._.block !== null) this._.block.abort()
 }
 
 /**
