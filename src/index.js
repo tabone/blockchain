@@ -26,6 +26,11 @@ module.exports = function createBlockchain (opts = {}) {
     abort,
 
     /**
+     * Function used to move the next data in the queue inside the Blockchain.
+     */
+    resume: constructNextBlock,
+
+    /**
      * Function used to add a new block.
      */
     enqueueData,
@@ -153,6 +158,7 @@ function setDifficulty (difficulty) {
 /**
  * Function used to stop the Blockchain from including the current Block
  * being initialized.
+ * @this {module:blockchain}
  */
 function abort () {
   // Abort current Block initialization, if there is one ongoing.
@@ -169,19 +175,23 @@ function enqueueData (opts) {
   const queuedDataInst = queuedData(opts)
   this._.queue.push(queuedDataInst)
   this.emit('enqueue-data', queuedDataInst)
-  if (this._.queue.length === 1) constructNextBlock.call(this)
+  constructNextBlock.call(this)
 }
 
 /**
- * Function used to move the next data in the queue to the blockchain.
+ * Function used to move the next data in the queue to the Blockchain.
  * @this {module:blockchain}
  */
 function constructNextBlock () {
-  // Stop process if there is no data in the queue.
+  // Stop process, if the Blockchain object is already working on including a
+  // Block.
+  if (this._.block !== null) return
+
+  // Stop process, if there is no data in the queue.
   if (this._.queue.length === 0) return this.emit('waiting')
 
-  // Retrieve the Queue Data object to be inserted in a Block.
-  const queuedDataInst = this._.queue[0]
+  // Retrieve the Queued Data object to be inserted in a Block.
+  const queuedDataInst = this._.queue.shift()
 
   // Create block.
   this._.block = block({
@@ -195,16 +205,26 @@ function constructNextBlock () {
   // new block.
   this.emit('constructing-block', queuedDataInst)
 
-  // Listen for the Block's ready' event (which will mean that the block has
+  // Listen for the Block's aborted event (which will mean that the Block
+  // initialization has been aborted).
+  this._.block.on('aborted', () => {
+    // Re-include the Queued Data object in the queue, since it wasn't added in
+    // the Blockchain.
+    this._.queue.unshift(queuedDataInst)
+    // Reset attribute storing the current Block being initialized.
+    this._.block = null
+  })
+
+  // Listen for the Block's ready event (which will mean that the Block has
   // been constructed).
   this._.block.on('ready', () => {
-    // Dequeue data of the Block from the Block queue.
-    this._.queue.splice(0, 1)
     // Include newly created block in Blockchain.
     this._.chain.push(this._.block)
     // Notify Event Emitter listeners that a new Block has been added in the
     // Blockchain.
     this.emit('new-block', this._.block, queuedDataInst.id)
+    // Reset attribute storing the current Block being initialized.
+    this._.block = null
     // Start working on constructing the next Block.
     constructNextBlock.call(this)
   })
