@@ -176,7 +176,7 @@ function constructNextBlock () {
 
   // Listen for the Block's ready' event (which will mean that the block has
   // been constructed).
-  blockInst.on('ready', (hash) => {
+  blockInst.on('ready', () => {
     // Dequeue data of the Block from the Block queue.
     this._.queue.splice(0, 1)
     // Include newly created block in Blockchain.
