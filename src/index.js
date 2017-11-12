@@ -219,8 +219,9 @@ function addBlock (blockInfo, queuedDataID) {
 /**
  * Function used to queue data to be added in the blockchain.
  * @this {module:blockchain}
- * @param {opts} opts      Options for addBlock function.
- * @param {*}    opts.data Block data.
+ * @param {opts}   opts      Options for enqueueData function.
+ * @param {string} [opts.id] ID of the Queued Data.
+ * @param {*}      opts.data Block data.
  */
 function enqueueData (opts) {
   const queuedDataInst = queuedData(opts)
