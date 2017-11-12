@@ -28,7 +28,7 @@ module.exports = function createBlockchain (opts = {}) {
     /**
      * Function used to move the next data in the queue inside the Blockchain.
      */
-    resume: constructNextBlock,
+    resume,
 
     /**
      * Function used to add a new Block to the Blockchain.
@@ -206,7 +206,7 @@ function addBlock (blockInfo, queuedDataID) {
 
   // Notify Event Emitter listeners that a new Block has been added in the
   // Blockchain.
-  this.emit('new-block', blockInst, queuedDataID)
+  this.emit('new-block', blockInst)
 
   // Construct the next Block.
   this.resume()
@@ -234,7 +234,7 @@ function enqueueData (opts) {
  * Function used to move the next data in the queue to the Blockchain.
  * @this {module:blockchain}
  */
-function constructNextBlock () {
+function resume () {
   // Stop process, if the Blockchain object is already working on including a
   // Block.
   if (this._.block !== null) return
@@ -247,7 +247,7 @@ function constructNextBlock () {
 
   // Create block.
   const blockInst = this._.block = block({
-    data: queuedDataInst.data,
+    data: queuedDataInst,
     index: this.nextIndex,
     difficulty: this._.difficulty,
     previousHash: (this.nextIndex === 0) ? '' : this.latestBlock.hash
@@ -276,7 +276,7 @@ function constructNextBlock () {
     this._.chain.push(blockInst)
     // Notify Event Emitter listeners that a new Block has been added in the
     // Blockchain.
-    this.emit('new-block', blockInst, queuedDataInst.id)
+    this.emit('new-block', blockInst)
     // Start working on constructing the next Block.
     this.resume()
   })

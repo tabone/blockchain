@@ -4,11 +4,12 @@ const assert = require('assert')
 const crypto = require('crypto')
 const EventEmitter = require('events')
 const states = require('./block-states')
+const queuedData = require('./queued-data')
 
 /**
  * Function used to create a new Block.
  * @param  {Object} opts              Options for createBlock function.
- * @param  {*}      opts.data         Data to be stored in the Block.
+ * @param  {Object} opts.data         Data to be stored in the Block.
  * @param  {number} opts.index        Position of the Block in the Blockchain.
  * @param  {number} opts.difficulty   Proof of work difficulty.
  * @param  {string} opts.previousHash Hash of previous Block.
@@ -48,9 +49,9 @@ module.exports = function createBlock (opts) {
     _: {
       /**
        * Data to stored in the Block.
-       * @type {Object}
+       * @type {module:queued-data}
        */
-      data: opts.data,
+      data: queuedData(opts.data),
 
       /**
        * Position of the Block in the Blockchain.
@@ -119,7 +120,7 @@ module.exports = function createBlock (opts) {
 /**
  * Function used to return the data stored in the Block.
  * @this {module:block}
- * @return {*} Block's data.
+ * @return {module:queued-data} Block's data.
  */
 function getData () {
   return this._.data
@@ -170,8 +171,8 @@ function getNonce () {
 function getValid () {
   // Signiture of Hash without the nonce.
   const signiture = String(this._.index) + String(this._.difficulty) +
-    String(this._.previousHash) + String(this._.data) + String(this._.date) +
-    String(this._.nonce)
+    String(this._.previousHash) + String(this._.data.id) +
+    String(this._.data.data) + String(this._.date) + String(this._.nonce)
 
   var sha256 = crypto.createHash('sha256')
   sha256.update(signiture)
@@ -251,7 +252,8 @@ function generateHash () {
   process.nextTick(() => {
     // Signiture of Hash without the nonce.
     const signiture = String(this._.index) + String(this._.difficulty) +
-      String(this._.previousHash) + String(this._.data) + String(this._.date)
+      String(this._.previousHash) + String(this._.data.id) +
+      String(this._.data.data) + String(this._.date)
 
     // Search for a Block hash that is smaller than the difficulty of the
     // proof of work.
