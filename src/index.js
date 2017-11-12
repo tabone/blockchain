@@ -219,13 +219,48 @@ function addBlock (blockInfo, queuedDataID) {
 /**
  * Function used to queue data to be added in the blockchain.
  * @this {module:blockchain}
- * @param {opts} opts      Options for addBlock function.
- * @param {*}    opts.data Block data.
+ * @param {queuedDataInfo} queuedDataInfo      Queue Data info.
+ * @param {string}         [queuedDataInfo.id] Queued Data ID.
+ * @param {*}              queuedDataInfo.data Queued Data data.
  */
-function enqueueData (opts) {
-  const queuedDataInst = queuedData(opts)
+function enqueueData (queuedDataInfo) {
+  // Create new Queued Data object.
+  const queuedDataInst = queuedData(queuedDataInfo)
+
+  // Prevent the creation of multiple Blocks for the same Queued Data.
+  if (queuedDataInfo.id != null) {
+    // Stop process, if the Block the Blockchain is currently working on
+    // contains the specified Queued Data.
+    if (this._.block !== null && this._.block.data.id === queuedDataInfo.id) {
+      return
+    }
+
+    // Retreive the position of the specified Queued Data from the queue.
+    const queuePosition = this._.queue.findIndex((existingQueuedData) => {
+      return queuedDataInfo.id === existingQueuedData.id
+    })
+
+    // Stop process, if the specified Queued Data is already present in the
+    // queue.
+    if (queuePosition !== -1) return
+
+    // Retreive the position of the Queued Data from the Blockchain.
+    const blockPosition = this._.chain.findIndex((blockInst) => {
+      return queuedDataInfo.id === blockInst.data.id
+    })
+
+    // Stop process, if the specified Queued Data is already present in the
+    // Blockchain.
+    if (blockPosition !== -1) return
+  }
+
+  // Include Queued Data object in queue list, to be added to the Blockchain.
   this._.queue.push(queuedDataInst)
+
+  // Notify Event Emitter listeners that a new Queued Data has been added.
   this.emit('enqueue-data', queuedDataInst)
+
+  // Resume generating blocks.
   this.resume()
 }
 
