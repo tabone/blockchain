@@ -31,7 +31,12 @@ module.exports = function createBlockchain (opts = {}) {
     resume: constructNextBlock,
 
     /**
-     * Function used to add a new block.
+     * Function used to add a new Block to the Blockchain.
+     */
+    addBlock,
+
+    /**
+     * Function used to queue data to be stored to the Blockchain.
      */
     enqueueData,
 
@@ -67,7 +72,7 @@ module.exports = function createBlockchain (opts = {}) {
        * Proof of work difficulty.
        * @type {number}
        */
-      difficulty: opts.difficulty || DIFFICULTY,
+      difficulty: opts.difficulty || DIFFICULTY
     }
   })
 
@@ -166,6 +171,53 @@ function abort () {
 }
 
 /**
+ * Function used to add a new Block to the Blockchain.
+ * @this {module:blockchain}
+ * @param {Object} blockInfo    Block to be added.
+ * @param {string} queuedDataID ID of Queued Data that the specified Block was
+ *                              created for.
+ * @return {boolean} TRUE if the Block has been added to the Blockchain.
+ * @return {boolean} FALSE if the Block hasn't been added to the Blockchain.
+ */
+function addBlock (blockInfo, queuedDataID) {
+  // Create Block object.
+  const blockInst = block(blockInfo)
+
+  // Stop process & return false, if Block is invalid.
+  if (blockInst.valid === false) return false
+
+  // Stop process & return false, if the Block's index is invalid.
+  if (this.nextIndex !== blockInst.index) return false
+
+  // Retrieve the hash of the latest Block in the Blockchain.
+  const latestHash = (this.nextIndex === 0) ? '' : this.latestBlock.hash
+
+  // Stop process & return false, if the previous hash of the specified Block is
+  // not the same as the hash of the latest Block in the Blockchain.
+  if (blockInst.previousHash !== latestHash) return false
+
+  // Abort any Block initialization.
+  this.abort()
+
+  // Include the new Block in the Blockchain.
+  this._.chain.push(blockInst)
+
+  // Remove the Queued Data which the specified Block was created for.
+  removeQueuedData.call(this, queuedDataID)
+
+  // Notify Event Emitter listeners that a new Block has been added in the
+  // Blockchain.
+  this.emit('new-block', blockInst, queuedDataID)
+
+  // Construct the next Block.
+  this.resume()
+
+  // Return true to indicate that the specified Block was added to the
+  // Blockchain.
+  return true
+}
+
+/**
  * Function used to queue data to be added in the blockchain.
  * @this {module:blockchain}
  * @param {opts} opts      Options for addBlock function.
@@ -175,7 +227,7 @@ function enqueueData (opts) {
   const queuedDataInst = queuedData(opts)
   this._.queue.push(queuedDataInst)
   this.emit('enqueue-data', queuedDataInst)
-  constructNextBlock.call(this)
+  this.resume()
 }
 
 /**
@@ -194,7 +246,7 @@ function constructNextBlock () {
   const queuedDataInst = this._.queue.shift()
 
   // Create block.
-  this._.block = block({
+  const blockInst = this._.block = block({
     data: queuedDataInst.data,
     index: this.nextIndex,
     difficulty: this._.difficulty,
@@ -207,27 +259,42 @@ function constructNextBlock () {
 
   // Listen for the Block's aborted event (which will mean that the Block
   // initialization has been aborted).
-  this._.block.on('aborted', () => {
+  blockInst.on('aborted', () => {
+    // Reset attribute storing the current Block being initialized.
+    this._.block = null
     // Re-include the Queued Data object in the queue, since it wasn't added in
     // the Blockchain.
     this._.queue.unshift(queuedDataInst)
-    // Reset attribute storing the current Block being initialized.
-    this._.block = null
   })
 
   // Listen for the Block's ready event (which will mean that the Block has
   // been constructed).
-  this._.block.on('ready', () => {
-    // Include newly created block in Blockchain.
-    this._.chain.push(this._.block)
-    // Notify Event Emitter listeners that a new Block has been added in the
-    // Blockchain.
-    this.emit('new-block', this._.block, queuedDataInst.id)
+  blockInst.on('ready', () => {
     // Reset attribute storing the current Block being initialized.
     this._.block = null
+    // Include newly created block in Blockchain.
+    this._.chain.push(blockInst)
+    // Notify Event Emitter listeners that a new Block has been added in the
+    // Blockchain.
+    this.emit('new-block', blockInst, queuedDataInst.id)
     // Start working on constructing the next Block.
-    constructNextBlock.call(this)
+    this.resume()
   })
+}
+
+/**
+ * Function used to remove a Queued Data from the queue using its ID.
+ * @this {module:blockchain}
+ * @param  {string} queuedDataID Queued Data ID to be removed.
+ */
+function removeQueuedData (queuedDataID) {
+  // Retreive the position of the Queued Data to be removed.
+  const pos = this._.queue.findIndex((queuedDataInst) => {
+    return queuedDataInst.id === queuedDataID
+  })
+
+  // Remove Queued Data, if it exist in the queue.
+  if (pos !== -1) this._.queue.splice(pos, 1)
 }
 
 /**
