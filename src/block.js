@@ -244,7 +244,10 @@ function changeState (state) {
  * @return {Promise} Resolved once the Block hash has been generated.
  */
 function generateHash () {
+  // Stop process, if the hash of the Block is already calculated.
   if (this._.hash !== null) return
+
+  // Generate Block's hash.
   process.nextTick(() => {
     // Signiture of Hash without the nonce.
     const signiture = String(this._.index) + String(this._.difficulty) +
