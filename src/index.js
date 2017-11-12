@@ -106,8 +106,12 @@ function getChain () {
  * @return {boolean} FALSE if not valid.
  */
 function getValid () {
-  return this._.chain.find((blockInst) => {
-    return blockInst.valid === false
+  return this._.chain.find((blockInst, index) => {
+    // Retreive the expected Block's previous hash.
+    const previousHash = (index === 0) ? '' : this._.chain[index - 1].hash
+
+    // Validate Block.
+    return validateBlock(blockInst, index, previousHash) === false
   }) === undefined
 }
 
@@ -183,18 +187,13 @@ function addBlock (blockInfo, queuedDataID) {
   // Create Block object.
   const blockInst = block(blockInfo)
 
-  // Stop process & return false, if Block is invalid.
-  if (blockInst.valid === false) return false
-
-  // Stop process & return false, if the Block's index is invalid.
-  if (this.nextIndex !== blockInst.index) return false
-
   // Retrieve the hash of the latest Block in the Blockchain.
   const latestHash = (this.nextIndex === 0) ? '' : this.latestBlock.hash
 
-  // Stop process & return false, if the previous hash of the specified Block is
-  // not the same as the hash of the latest Block in the Blockchain.
-  if (blockInst.previousHash !== latestHash) return false
+  // Stop process & return false, if Block is invalid.
+  if (validateBlock(blockInst, this.nextIndex, latestHash) === false) {
+    return false
+  }
 
   // Abort any Block initialization.
   this.abort()
@@ -295,6 +294,30 @@ function removeQueuedData (queuedDataID) {
 
   // Remove Queued Data, if it exist in the queue.
   if (pos !== -1) this._.queue.splice(pos, 1)
+}
+
+/**
+ * Function used to validate a Block in the Blockchain.
+ * @param  {module:block} blockInst    Block to be validated.
+ * @param  {number}       index        Expected position of the Block in the
+ *                                     Blockchain.
+ * @param  {string}       previousHash Expected previous hash.
+ * @return {boolean}      TRUE if Block is valid.
+ * @return {boolean}      FALSE if Block is invalid.
+ */
+function validateBlock (blockInst, index, previousHash) {
+  // Stop process & return false, if Block's hash is invalid.
+  if (blockInst.valid === false) return false
+
+  // Stop process & return false, if Block's index does not match the Block's
+  // position in the Blockchain.
+  if (blockInst.index !== index) return false
+
+  // Stop process & return false, if Block's previous hash is invalid.
+  if (blockInst.previousHash !== previousHash) return false
+
+  // Return true to indicate that the Block is valid.
+  return true
 }
 
 /**
