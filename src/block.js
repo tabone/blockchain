@@ -169,13 +169,8 @@ function getNonce () {
  * @return {boolean} FALSE if not valid.
  */
 function getValid () {
-  // Signiture of Hash without the nonce.
-  const signiture = String(this._.index) + String(this._.difficulty) +
-    String(this._.previousHash) + String(this._.data.id) +
-    String(this._.data.data) + String(this._.date) + String(this._.nonce)
-
   var sha256 = crypto.createHash('sha256')
-  sha256.update(signiture)
+  sha256.update(getSigniture.call(this))
   var hash = sha256.digest('hex')
   return hash === this._.hash && parseInt(hash, 16) <= this._.difficulty
 }
@@ -205,6 +200,25 @@ function getDifficulty () {
  */
 function getPreviousHash () {
   return this._.previousHash
+}
+
+/**
+ * Function used to return the Block's signiture.
+ * @this {module:block}
+ * @return {string} Block's signiture.
+ */
+function getSigniture () {
+  // Create the base signiture.
+  const signiture = String(this._.index) + String(this._.difficulty) +
+    String(this._.previousHash) + String(this._.data.id) +
+    String(this._.data.data) + String(this._.date)
+
+  // Include nonce with the signiture, only if it has been used to generate the
+  // Block's hash.
+  const nonce = (this._.hash === null) ? '' : this._.nonce
+
+  // Return Block's signiture.
+  return signiture + nonce
 }
 
 /**
@@ -250,18 +264,13 @@ function generateHash () {
 
   // Generate Block's hash.
   process.nextTick(() => {
-    // Signiture of Hash without the nonce.
-    const signiture = String(this._.index) + String(this._.difficulty) +
-      String(this._.previousHash) + String(this._.data.id) +
-      String(this._.data.data) + String(this._.date)
-
     // Search for a Block hash that is smaller than the difficulty of the
     // proof of work.
     while (true) {
       // Stop hash generation if Block is not in the initialization state.
       if (this._.state !== states.INITIALIZING) break
       var sha256 = crypto.createHash('sha256')
-      sha256.update(signiture + String(++this._.nonce))
+      sha256.update(getSigniture.call(this) + String(++this._.nonce))
       var hash = sha256.digest('hex')
       if (parseInt(hash, 16) > this._.difficulty) continue
       this._.hash = hash
