@@ -169,9 +169,9 @@ function getNonce () {
  * @return {boolean} FALSE if not valid.
  */
 function getValid () {
-  var sha256 = crypto.createHash('sha256')
+  const sha256 = crypto.createHash('sha256')
   sha256.update(getSigniture.call(this))
-  var hash = sha256.digest('hex')
+  const hash = sha256.digest('hex')
   return hash === this._.hash && parseInt(hash, 16) <= this._.difficulty
 }
 
