@@ -3,6 +3,7 @@
 /**
  * Constants used by this module.
  * @type {Object}
+ * @readOnly
  */
 module.exports = {
   /**

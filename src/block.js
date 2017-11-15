@@ -242,6 +242,9 @@ function abort () {
  * @param  {number} state New state of the Block.
  */
 function changeState (state) {
+  // Stop process, if the same state is assigned.
+  if (this._.state === state) return
+
   // Change the current state.
   this._.state = state
 
