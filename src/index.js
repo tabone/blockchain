@@ -3,12 +3,7 @@
 const EventEmitter = require('events')
 const block = require('./block')
 const queuedData = require('./queued-data')
-
-/**
- * Default proof of work difficulty.
- * @type {number}
- */
-const DIFFICULTY = 1766847064778384329583297500742918515827483896875618958121606201292619775
+const constants = require('./constants')
 
 /**
  * Function used to create a new Blockchain.
@@ -72,7 +67,8 @@ module.exports = function createBlockchain (opts = {}) {
        * Proof of work difficulty.
        * @type {number}
        */
-      difficulty: opts.difficulty || DIFFICULTY
+      difficulty: (opts.difficulty == null) ? constants.DIFFICULTY
+        : opts.difficulty
     }
   })
 

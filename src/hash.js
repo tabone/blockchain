@@ -2,6 +2,7 @@
 
 const assert = require('assert')
 const crypto = require('crypto')
+const constants = require('./constants')
 
 process.on('message', (encodedPayload) => {
   // Parse the encoded payload into an object.
@@ -10,7 +11,10 @@ process.on('message', (encodedPayload) => {
 
   // Check for required fields.
   assert.notEqual(payload.signiture, null)
-  assert.notEqual(payload.difficulty, null)
+
+  // Use Default Proof of Work difficulty, if one is not specified.
+  payload.difficulty = (payload.difficulty == null) ? constants.DIFFICULTY
+    : payload.difficulty
 
   /**
    * Used to alter the Block's hash without affecting the Block's data to find a
