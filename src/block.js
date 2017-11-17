@@ -260,9 +260,9 @@ function changeState (state) {
  * @this {module:block}
  */
 function generateHash () {
-  // Stop process, if the Block's is already calculated.
+  // Stop process, if the Block's hash is already calculated.
   if (this._.hash !== null) {
-    // Set Block's state as ready.
+    // Set Block's state as READY.
     changeState.call(this, states.READY)
     return
   }
@@ -276,8 +276,7 @@ function generateHash () {
   // Generate Block's hash.
   var hash = sha256.digest('hex')
 
-  // Set Block's hash if the generated hash is smaller or equal to the Proof of
-  // Work difficulty.
+  // Use hash, if it is smaller or equal to the Proof of Work difficulty.
   if (parseInt(hash, 16) <= this._.difficulty) this._.hash = hash
 
   // Generate another hash with a different nonce, if the hash is not valid
