@@ -256,30 +256,33 @@ function changeState (state) {
 }
 
 /**
- * Function used generate the Block hash.
- * @async
+ * Function used generate the Block's hash.
  * @this {module:block}
- * @return {Promise} Resolved once the Block hash has been generated.
  */
 function generateHash () {
-  // Stop process, if the hash of the Block is already calculated.
-  if (this._.hash !== null) return
+  // Stop process, if the Block's is already calculated.
+  if (this._.hash !== null) {
+    // Set Block's state as ready.
+    changeState.call(this, states.READY)
+    return
+  }
+
+  // Create SHA256 Hash object.
+  var sha256 = crypto.createHash('sha256')
+
+  // Append the nonce to the Block's singiture.
+  sha256.update(getSigniture.call(this) + String(++this._.nonce))
 
   // Generate Block's hash.
-  process.nextTick(() => {
-    // Search for a Block hash that is smaller than the difficulty of the
-    // proof of work.
-    while (true) {
-      // Stop hash generation if Block is not in the initialization state.
-      if (this._.state !== states.INITIALIZING) break
-      var sha256 = crypto.createHash('sha256')
-      sha256.update(getSigniture.call(this) + String(++this._.nonce))
-      var hash = sha256.digest('hex')
-      if (parseInt(hash, 16) > this._.difficulty) continue
-      this._.hash = hash
-      changeState.call(this, states.READY)
-    }
-  })
+  var hash = sha256.digest('hex')
+
+  // Set Block's hash if the generated hash is smaller or equal to the Proof of
+  // Work difficulty.
+  if (parseInt(hash, 16) <= this._.difficulty) this._.hash = hash
+
+  // Generate another hash with a different nonce, if the hash is not valid
+  // otherwise change the Block's state to READY.
+  return global.setImmediate(generateHash.bind(this))
 }
 
 /**
