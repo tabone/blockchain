@@ -3,13 +3,21 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "dependencies": {},
+  "devDependencies": {
+    "standard": "^10.0.3"
+  },
   "scripts": {
     "test": "standard"
   },
-  "keywords": [],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tabone/blockchain.git"
+  },
   "author": "Luca Tabone <taboneluca3@gmail.com>",
   "license": "ISC",
-  "devDependencies": {
-    "standard": "^10.0.3"
-  }
+  "bugs": {
+    "url": "https://github.com/tabone/blockchain/issues"
+  },
+  "homepage": "https://github.com/tabone/blockchain#readme"
 }
